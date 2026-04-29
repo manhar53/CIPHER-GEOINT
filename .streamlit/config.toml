@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 500
+headless = true
+enableCORS = false
+
+[theme]
+base = "dark"
+primaryColor = "#00d4ff"
+backgroundColor = "#070f1a"
+secondaryBackgroundColor = "#0a1628"
+textColor = "#c5dff0"
+font = "sans serif"
