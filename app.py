@@ -504,6 +504,17 @@ def _style_conf(df: pd.DataFrame, col: str) -> "pd.io.formats.style.Styler":
     return df.style.map(_color, subset=[col])
 
 
+SAMPLES_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "samples")
+SAMPLE_IMAGE = os.path.join(SAMPLES_DIR, "india_gate_satellite.jpg")
+SAMPLE_VIDEO = os.path.join(SAMPLES_DIR, "india_gate_drone.mp4")
+
+
+@st.cache_data(show_spinner=False)
+def _read_sample(path: str) -> bytes:
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def _empty_state(step: str, title: str, body: str, note: str = "") -> None:
     """Render a centered onboarding card for tabs with no data yet."""
     note_html = (
@@ -846,6 +857,8 @@ with tab_sat:
             key="sat_file_uploader",
             label_visibility="collapsed",
         )
+        if st.button("Try sample image — India Gate, New Delhi", key="btn_sat_sample"):
+            st.session_state.sat_use_sample = True
 
     with col_tip:
         st.markdown('<div class="section-hdr">Tips</div>', unsafe_allow_html=True)
@@ -859,7 +872,9 @@ with tab_sat:
             unsafe_allow_html=True,
         )
 
-    if not sat_file and not st.session_state.sat_results:
+    _sat_sample = st.session_state.get("sat_use_sample") and not sat_file
+
+    if not sat_file and not _sat_sample and not st.session_state.sat_results:
         _empty_state(
             step="Step 01 of 03",
             title="Upload a Satellite Image",
@@ -871,14 +886,14 @@ with tab_sat:
             note="JPEG &middot; PNG &middot; GeoTIFF &middot; Sentinel &middot; Landsat",
         )
 
-    if sat_file:
-        img_bytes = sat_file.read()
+    if sat_file or _sat_sample:
+        img_bytes = sat_file.read() if sat_file else _read_sample(SAMPLE_IMAGE)
         orig_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
         st.session_state.sat_original_image = orig_pil
 
         prev_col, meta_col = st.columns([3, 1])
         with prev_col:
-            st.image(orig_pil, caption="Uploaded Satellite Image", use_container_width=True)
+            st.image(orig_pil, caption="Sample Satellite Image — India Gate" if _sat_sample else "Uploaded Satellite Image", use_container_width=True)
         with meta_col:
             st.markdown("**Image Info**")
             st.write(f"Dimensions: `{orig_pil.width} × {orig_pil.height} px`")
@@ -1130,6 +1145,8 @@ with tab_drn:
             key="drn_file_uploader",
             label_visibility="collapsed",
         )
+        if st.button("Try sample video — India Gate drone flyover", key="btn_drn_sample"):
+            st.session_state.drn_use_sample = True
 
     with col_tip2:
         st.markdown('<div class="section-hdr">Capabilities</div>', unsafe_allow_html=True)
@@ -1148,7 +1165,9 @@ with tab_drn:
             unsafe_allow_html=True,
         )
 
-    if not drn_file and not st.session_state.drn_results:
+    _drn_sample = st.session_state.get("drn_use_sample") and not drn_file
+
+    if not drn_file and not _drn_sample and not st.session_state.drn_results:
         _empty_state(
             step="Step 02 of 03",
             title="Upload a Drone Video",
@@ -1161,9 +1180,9 @@ with tab_drn:
             note="MP4 &middot; AVI &middot; MOV &middot; MKV",
         )
 
-    if drn_file:
-        vid_bytes = drn_file.read()
-        st.markdown("**Original Video Preview**")
+    if drn_file or _drn_sample:
+        vid_bytes = drn_file.read() if drn_file else _read_sample(SAMPLE_VIDEO)
+        st.markdown("**Sample Video Preview — India Gate**" if _drn_sample else "**Original Video Preview**")
         st.video(vid_bytes)
         size_mb = len(vid_bytes) / 1_048_576
         st.caption(f"File size: {size_mb:.2f} MB")
